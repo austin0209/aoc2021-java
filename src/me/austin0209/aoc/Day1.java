@@ -4,7 +4,7 @@ import java.io.*;
 import java.util.stream.IntStream;
 
 public class Day1 {
-    public static void SolvePart1(int[] input) {
+    public static void solvePart1(int[] input) {
         var ans = IntStream.range(1, input.length)
                 .filter(i -> input[i] > input[i - 1])
                 .count();
@@ -12,7 +12,7 @@ public class Day1 {
         System.out.println("Part 1 answer: " + ans);
     }
 
-    public static void SolvePart2(int[] input) {
+    public static void solvePart2(int[] input) {
         var windows = IntStream.range(0, input.length - 2)
                 .map(i -> input[i] + input[i + 1] + input[i + 2])
                 .toArray();
@@ -32,7 +32,7 @@ public class Day1 {
                 .mapToInt(Integer::parseInt)
                 .toArray();
 
-        SolvePart1(input);
-        SolvePart2(input);
+        solvePart1(input);
+        solvePart2(input);
     }
 }
