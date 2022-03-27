@@ -6,7 +6,9 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
+import java.util.Objects;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
@@ -14,40 +16,48 @@ public class Day4 {
     record BoardSpace(int value, boolean marked) {
     }
 
-    record Board(List<BoardSpace> board, int columns, int rows) {
+    record Board(List<BoardSpace> boardSpaces, int columns, int rows) {
         BoardSpace get(int x, int y) {
-            return board.get(x + y * columns);
+            return boardSpaces.get(x + y * columns);
         }
 
         Stream<BoardSpace> stream() {
-            return board.stream();
+            return boardSpaces.stream();
         }
     }
 
-    static class Bingo {
-        List<Board> players;
-        List<Integer> draws;
-        int lastDrawn;
+    record Win(int finalScore, int drawIndex) {
+    }
 
-        Bingo(List<Board> players, List<Integer> draws) {
-            this.players = players;
-            this.draws = draws;
-            this.lastDrawn = -1;
+    static class GameSession {
+        int lastDrawnIndex;
+        List<Board> currentBoards;
+
+        GameSession(List<Board> players) {
+            this.currentBoards = players;
+            lastDrawnIndex = -1;
         }
+    }
 
-        void draw(int number) {
-            var newPlayers = new ArrayList<Board>();
-            for (Board board : players) {
+    record Bingo(List<Board> initialBoards, List<Integer> draws) {
+        // returns false if game is finished, else updates state
+        boolean drawNumberStep(GameSession session) {
+            if (session.lastDrawnIndex == draws.size() - 1) return false;
+
+            var number = draws.get(session.lastDrawnIndex + 1);
+            var newBoards = new ArrayList<Board>();
+            for (Board board : session.currentBoards) {
                 List<BoardSpace> spaces = board.stream()
                         .map(space -> {
                             if (space.value == number) return new BoardSpace(space.value, true);
                             else return space;
                         }).toList();
-                newPlayers.add(new Board(spaces, board.columns, board.rows));
+                newBoards.add(new Board(spaces, board.columns, board.rows));
             }
 
-            this.players = newPlayers;
-            this.lastDrawn = number;
+            session.currentBoards = newBoards;
+            session.lastDrawnIndex++;
+            return true;
         }
 
         boolean hasWon(Board board) {
@@ -73,30 +83,50 @@ public class Day4 {
             return checkLineWin.apply(rows) || checkLineWin.apply(columns);
         }
 
-        int getFinalScore() {
-            for (Board board : players) {
-                if (hasWon(board)) {
-                    int sumOfUnmarked = board.stream()
-                            .filter(bs -> !bs.marked)
-                            .mapToInt(bs -> bs.value)
-                            .sum();
-                    return lastDrawn * sumOfUnmarked;
-                }
+        Win getWin(Board board, GameSession session) {
+            if (hasWon(board)) {
+                int sumOfUnmarked = board.stream()
+                        .filter(bs -> !bs.marked)
+                        .mapToInt(bs -> bs.value)
+                        .sum();
+                return new Win(draws.get(session.lastDrawnIndex) * sumOfUnmarked, session.lastDrawnIndex);
             }
 
-            return -1;
+            return null;
+        }
+
+        Win playSingleUntilWin(Board board) {
+            var session = new GameSession(List.of(board));
+            while (this.drawNumberStep(session)) {
+                var win = this.getWin(session.currentBoards.get(0), session);
+                if (win != null) return win;
+            }
+
+            return null;
         }
 
         int playPart1() {
-            for (var i : this.draws) {
-                this.draw(i);
-                var score = this.getFinalScore();
-                if (score != -1) {
-                    return score;
+            var session = new GameSession(new ArrayList<>(initialBoards));
+            while (this.drawNumberStep(session)) {
+                for (Board board : session.currentBoards) {
+                    var win = this.getWin(board, session);
+                    if (win != null) {
+                        return win.finalScore;
+                    }
                 }
             }
 
             throw new RuntimeException("Nobody won...");
+        }
+
+        int playPart2() {
+            var lastWin = initialBoards.stream()
+                    .map(this::playSingleUntilWin)
+                    .filter(Objects::nonNull)
+                    .max(Comparator.comparingInt(w -> w.drawIndex))
+                    .orElseThrow(() -> new RuntimeException("Nobody won..."));
+
+            return lastWin.finalScore;
         }
     }
 
@@ -132,7 +162,7 @@ public class Day4 {
 
     public static void main(String[] args) throws IOException {
         Bingo bingo = parseInput("input/day4.txt");
-        System.out.println(bingo.playPart1());
+        System.out.println(bingo.playPart2());
     }
 
     @Test
@@ -170,11 +200,11 @@ public class Day4 {
                 .map(b -> new Board(b, 5, 5))
                 .toList();
 
-        assert (players.size() == bingo.players.size());
+        assert (players.size() == bingo.initialBoards.size());
         assert (draws.size() == bingo.draws.size());
 
         for (int i = 0; i < players.size(); i++) {
-            assert (players.get(i).equals(bingo.players.get(i)));
+            assert (players.get(i).equals(bingo.initialBoards.get(i)));
         }
 
         for (int i = 0; i < draws.size(); i++) {
@@ -249,9 +279,16 @@ public class Day4 {
     }
 
     @Test
-    void testFinalScore() throws IOException {
+    void testPart1() throws IOException {
         Bingo bingo = parseInput("input/day4sample.txt");
         var score = bingo.playPart1();
         assert (score == 4512);
+    }
+
+    @Test
+    void testPart2() throws IOException {
+        Bingo bingo = parseInput("input/day4sample.txt");
+        var score = bingo.playPart2();
+        assert (score == 1924);
     }
 }
