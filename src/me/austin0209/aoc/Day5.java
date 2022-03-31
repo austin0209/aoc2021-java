@@ -11,14 +11,15 @@ import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 public class Day5 {
-    static int worldWidth = 1000;
-    static int worldHeight = 1000;
+    static int worldWidth = 1500;
+    static int worldHeight = 1500;
 
     record Point(int x, int y) {}
 
     record Line(Point start, Point end) {
         boolean isHorizontal() { return start.y == end.y; }
         boolean isVertical() { return start.x == end.x; }
+        boolean isDiagonal() { return Math.abs(start.x - end.x) == Math.abs(start.y - end.y); }
 
         List<Point> getPointRange() {
             if (isHorizontal()) {
@@ -33,9 +34,34 @@ public class Day5 {
                 return IntStream.rangeClosed(first, last)
                         .mapToObj(i -> new Point(start.x, i))
                         .toList();
+            } else if (isDiagonal()) {
+                var topLeft = new Point(Math.min(start.x, end.x), Math.min(start.y, end.y));
+                var bottomRight = new Point(Math.max(start.x, end.x), Math.max(start.y, end.y));
+
+                var xRange = IntStream.rangeClosed(topLeft.x, bottomRight.x).toArray();
+                var yRange = IntStream.rangeClosed(topLeft.y, bottomRight.y).toArray();
+
+                assert(xRange.length == yRange.length);
+
+                boolean backSlash = start.equals(topLeft) || end.equals(topLeft);
+                if (!backSlash) {
+                    var reversed = new ArrayList<Integer>();
+                    for (int i = xRange.length - 1; i >= 0; i--) {
+                        reversed.add(xRange[i]);
+                    }
+                    xRange = reversed.stream().mapToInt(Integer::intValue).toArray();
+                }
+
+                List<Point> points = new ArrayList<>();
+
+                for (int i = 0; i < xRange.length; i++) {
+                    points.add(new Point(xRange[i], yRange[i]));
+                }
+
+                return points;
             }
 
-            throw new RuntimeException("This line is not horizontal or vertical...");
+            throw new RuntimeException("This line is not horizontal, vertical, or diagonal...");
         }
     }
 
@@ -61,7 +87,7 @@ public class Day5 {
         return rawLines.map(Day5::stringToLine).toList();
     }
 
-    static long solveDay1(List<Line> input) {
+    static long solvePart1(List<Line> input) {
         List<Line> lines = input.stream()
                 .filter(l -> l.isVertical() || l.isHorizontal())
                 .toList();
@@ -71,8 +97,28 @@ public class Day5 {
 
         for (var line : lines) {
             var points = line.getPointRange();
-            for (int i = 0; i < points.size(); i++) {
-                var point = points.get(i);
+            for (Point point : points) {
+                var index = point.x + point.y * worldWidth;
+                world.set(index, world.get(index) + 1);
+            }
+        }
+
+        return world.stream()
+                .filter(i -> i >= 2)
+                .count();
+    }
+
+    static long solvePart2(List<Line> input) {
+        List<Line> lines = input.stream()
+                .filter(l -> l.isVertical() || l.isHorizontal() || l.isDiagonal())
+                .toList();
+
+        List<Integer> world = new ArrayList<>(worldWidth * worldHeight);
+        while(world.size() < worldWidth * worldHeight) world.add(0);
+
+        for (var line : lines) {
+            var points = line.getPointRange();
+            for (Point point : points) {
                 var index = point.x + point.y * worldWidth;
                 world.set(index, world.get(index) + 1);
             }
@@ -84,7 +130,8 @@ public class Day5 {
     }
 
     public static void main(String[] args) throws FileNotFoundException {
-        System.out.println(solveDay1(parseInput("input/day5.txt")));
+        System.out.println(solvePart1(parseInput("input/day5.txt")));
+        System.out.println(solvePart2(parseInput("input/day5.txt")));
     }
 
     @Test
@@ -127,7 +174,13 @@ public class Day5 {
 
     @Test
     void testPart1() throws FileNotFoundException {
-        System.out.println(solveDay1(parseInput("input/day5sample.txt")));
-        assert solveDay1(parseInput("input/day5sample.txt")) == 5;
+        System.out.println(solvePart1(parseInput("input/day5sample.txt")));
+        assert solvePart1(parseInput("input/day5sample.txt")) == 5;
+    }
+
+    @Test
+    void testPart2() throws FileNotFoundException {
+        System.out.println(solvePart2(parseInput("input/day5sample.txt")));
+        assert solvePart2(parseInput("input/day5sample.txt")) == 12;
     }
 }
