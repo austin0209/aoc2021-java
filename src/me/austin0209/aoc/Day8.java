@@ -1,13 +1,28 @@
 package me.austin0209.aoc;
 
+import org.junit.jupiter.api.Test;
+
 import java.io.BufferedReader;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.util.Arrays;
 import java.util.List;
-import java.util.function.Function;
 
 public class Day8 {
+    record PatternsOutputPair(List<String> patterns, List<String> output) {
+    }
+
+    static List<PatternsOutputPair> parseInput(String filename) throws FileNotFoundException {
+        return new BufferedReader(new FileReader(filename))
+                .lines()
+                .map(s -> {
+                    var split = s.split(" \\| ");
+                    var patterns = Arrays.stream(split[0].split(" ")).toList();
+                    var output = Arrays.stream(split[1].split(" ")).toList();
+                    return new PatternsOutputPair(patterns, output);
+                })
+                .toList();
+    }
 
     public static void main(String[] args) throws FileNotFoundException {
         // Solve part 1
@@ -23,4 +38,18 @@ public class Day8 {
 
         System.out.println(answerPart1);
     }
+
+    @Test
+    void testParseInput() throws FileNotFoundException {
+        var answer = parseInput("input/day8sample.txt").get(0);
+
+        var patterns = List.of("acedgfb", "cdfbe", "gcdfa", "fbcad", "dab", "cefabd", "cdfgeb", "eafb", "cagedb", "ab");
+        var output = List.of("cdfeb", "fcadb", "cdfeb", "cdbaf");
+
+        System.out.println(answer.patterns);
+        System.out.println(answer.output);
+
+        assert(answer.patterns.equals(patterns) && answer.output.equals(output));
+    }
+
 }
