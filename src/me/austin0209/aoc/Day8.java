@@ -38,6 +38,7 @@ public class Day8 {
         return charSetPattern1.containsAll(pattern2.chars().boxed().toList());
     }
 
+    // Returns a list of patterns whose contents are sorted.
     static List<String> getSortedPatterns(List<String> patterns) {
         return patterns.stream()
                 .map(s -> s.chars().sorted().mapToObj(i -> String.valueOf((char) i)))
@@ -76,9 +77,7 @@ public class Day8 {
                 case (String s && s.length() == 6 && containsPattern(s, intToPattern.get(1))) -> 0;
                 case (String s && s.length() == 6) -> 6;
                 case (String s && s.length() == 5 && containsPattern(s, intToPattern.get(1))) -> 3;
-                case (String s && s.length() == 5 &&
-                        containsPattern(s, intToPattern.get(1)) &&
-                        patternIntersectionCount(s, intToPattern.get(4)) == 2) -> 2;
+                case (String s && s.length() == 5 && patternIntersectionCount(s, intToPattern.get(4)) == 2) -> 2;
                 case (String s && s.length() == 5) -> 5;
                 default -> -1;
             };
