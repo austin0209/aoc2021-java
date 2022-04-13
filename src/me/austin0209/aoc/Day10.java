@@ -4,6 +4,7 @@ import java.io.BufferedReader;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.util.*;
+import java.util.stream.Stream;
 
 public class Day10 {
     record Token(Character type, int nesting) {}
@@ -42,7 +43,7 @@ public class Day10 {
         };
     }
 
-    private int getScore(char c) {
+    private int getSyntaxScore(char c) {
         return switch (c) {
             case ')' -> 3;
             case ']' -> 57;
@@ -75,7 +76,7 @@ public class Day10 {
                                 throw new NoSuchElementException();
                             }
                         } catch (NoSuchElementException e) {
-                            score += this.getScore(c);
+                            score += this.getSyntaxScore(c);
                             continue lineIteration;
                         }
                     }
@@ -85,6 +86,59 @@ public class Day10 {
         }
 
         System.out.println("Part 1 answer: " + score);
+    }
+
+    long getAutoCompleteScore() {
+        var points = Stream.of(parensStack, squareStack, pointyStack, curlyStack)
+                .flatMap(Collection::stream)
+                .sorted(Comparator.comparingInt(a -> -a.nesting))
+                .map(t -> switch (t.type) {
+                    case '(' -> 1;
+                    case '[' -> 2;
+                    case '{' -> 3;
+                    case '<' -> 4;
+                    default -> throw new RuntimeException("Invalid character!");
+                })
+                .toList();
+
+        long result = 0;
+        for (var p : points) {
+            result = result * 5 + p;
+        }
+
+        return result;
+    }
+
+    void solvePart2() {
+        List<Long> scores = new ArrayList<>();
+
+        lineIteration: for (var line : lines) {
+            this.reset();
+            var chars = line.chars().mapToObj(i -> (char)i).toList();
+            int currentNesting = 0;
+            for (var c : chars) {
+                switch (c) {
+                    case '(', '[', '{', '<' -> this.push(new Token(c, currentNesting++));
+                    case ')', ']', '}', '>' -> {
+                        try {
+                            Token popped = this.pop(c);
+                            if (popped.nesting != --currentNesting) {
+                                throw new NoSuchElementException();
+                            }
+                        } catch (NoSuchElementException e) {
+                            // Line is corrupted, ignore
+                            continue lineIteration;
+                        }
+                    }
+                    default -> throw new RuntimeException("Invalid character! " + c);
+                }
+            }
+
+            scores.add(this.getAutoCompleteScore());
+        }
+
+        Collections.sort(scores);
+        System.out.println("Part 2 answer: " + scores.get(scores.size() / 2));
     }
 
     static Day10 fromInput(String filename) throws FileNotFoundException {
@@ -99,5 +153,8 @@ public class Day10 {
     public static void main(String[] args) throws FileNotFoundException {
         var part1 = Day10.fromInput("input/day10.txt");
         part1.solvePart1();
+
+        var part2 = Day10.fromInput("input/day10.txt");
+        part2.solvePart2();
     }
 }
