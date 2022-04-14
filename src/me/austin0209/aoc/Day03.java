@@ -6,7 +6,7 @@ import java.io.FileReader;
 import java.util.List;
 import java.util.function.Predicate;
 
-public class Day3 {
+public class Day03 {
     public static void solvePart1(List<String> input) {
         int totalBits = input.get(0).length();
         int[] counts = new int[totalBits];

@@ -12,7 +12,7 @@ import java.util.Objects;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
-public class Day4 {
+public class Day04 {
     record BoardSpace(int value, boolean marked) {
     }
 

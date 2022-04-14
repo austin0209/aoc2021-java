@@ -6,7 +6,7 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.stream.Stream;
 
-public class Day6 {
+public class Day06 {
     static long[] parseInput(String filename) throws IOException {
         var reader = new BufferedReader(new FileReader(filename));
         String[] line = reader.readLine().split(",");

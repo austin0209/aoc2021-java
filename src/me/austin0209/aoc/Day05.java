@@ -10,7 +10,7 @@ import java.util.List;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
-public class Day5 {
+public class Day05 {
     static int worldWidth = 1500;
     static int worldHeight = 1500;
 
@@ -84,7 +84,7 @@ public class Day5 {
 
     static List<Line> parseInput(String fileName) throws FileNotFoundException {
         var rawLines = new BufferedReader(new FileReader(fileName)).lines();
-        return rawLines.map(Day5::stringToLine).toList();
+        return rawLines.map(Day05::stringToLine).toList();
     }
 
     static long solvePart1(List<Line> input) {

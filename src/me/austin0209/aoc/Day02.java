@@ -5,7 +5,7 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.util.List;
 
-public class Day2 {
+public class Day02 {
     private enum Command {
         FORWARD,
         DOWN,
@@ -70,7 +70,7 @@ public class Day2 {
 
         var input = reader
                 .lines()
-                .map(Day2::parseCommand)
+                .map(Day02::parseCommand)
                 .toList();
 
         solvePart2(input);

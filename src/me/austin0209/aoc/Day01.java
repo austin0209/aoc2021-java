@@ -3,7 +3,7 @@ package me.austin0209.aoc;
 import java.io.*;
 import java.util.stream.IntStream;
 
-public class Day1 {
+public class Day01 {
     public static void solvePart1(int[] input) {
         var ans = IntStream.range(1, input.length)
                 .filter(i -> input[i] > input[i - 1])

@@ -9,7 +9,7 @@ import java.util.List;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
-public class Day7 {
+public class Day07 {
     static int fuelCostPart1(List<Integer> positions, int align) {
         return positions.stream()
                 .mapToInt((i) -> Math.abs(i - align))

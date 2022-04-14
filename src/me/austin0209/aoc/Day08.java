@@ -7,7 +7,7 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.util.*;
 
-public class Day8 {
+public class Day08 {
     record PatternsOutputPair(List<String> patterns, List<String> output) {
     }
 

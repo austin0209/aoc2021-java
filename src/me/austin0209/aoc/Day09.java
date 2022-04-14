@@ -105,7 +105,7 @@ class HeightMap {
     }
 }
 
-public class Day9 {
+public class Day09 {
     public static void main(String[] args) throws IOException {
         var map = HeightMap.fromInput("input/day9.txt");
 
