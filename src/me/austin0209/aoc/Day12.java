@@ -62,16 +62,6 @@ public class Day12 {
         }
     }
 
-    boolean containsPath(List<Node> path) {
-        for (var p : paths) {
-            if (p.equals(path)) {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
     void solvePart1() {
         var start = nodes.get("start");
         solvePart1Help(start, new ArrayList<>(), new HashSet<>());
@@ -82,11 +72,7 @@ public class Day12 {
     void solvePart2Help(Node current, List<Node> path, Set<Node> visited) {
         if (current.id.equals("end")) {
             path.add(nodes.get("end"));
-
-            if (!this.containsPath(path)) {
-                paths.add(path);
-            }
-
+            paths.add(path);
             return;
         }
 
