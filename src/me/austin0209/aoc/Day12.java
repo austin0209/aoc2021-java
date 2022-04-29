@@ -26,12 +26,10 @@ public class Day12 {
 
     Map<String, Node> nodes;
     List<List<Node>> paths;
-    boolean usedDoubleVisit;
 
     Day12() {
         this.nodes = new HashMap<>();
         this.paths = new ArrayList<>();
-        this.usedDoubleVisit = false;
     }
 
     void solvePart1Help(Node current, List<Node> path, Set<Node> visited) {
