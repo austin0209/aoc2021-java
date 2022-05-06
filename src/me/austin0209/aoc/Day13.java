@@ -7,8 +7,115 @@ import java.util.*;
 
 public class Day13 {
     record Paper(List<List<Boolean>> rows) {
-        boolean get(int x, int y) {
-            return rows.get(y).get(x);
+        boolean get(int row, int col) {
+            return rows.get(row).get(col);
+        }
+
+        int getNumRows() {
+            return rows.size();
+        }
+
+        int getNumCols() {
+            return rows.get(0).size();
+        }
+
+        Paper rotatedClockwise() {
+            var rotatedRows = new ArrayList<List<Boolean>>();
+
+            var resultRows = this.getNumCols();
+            var resultCols = this.getNumRows();
+
+            for (int i = 0; i < resultRows; i++) {
+                var newRow = new ArrayList<Boolean>(resultCols);
+                for (int j = 0; j < resultCols; j++) {
+                    newRow.add(this.get(this.getNumRows() - j - 1, i));
+                }
+
+                rotatedRows.add(newRow);
+            }
+
+            return new Paper(rotatedRows);
+        }
+
+        Paper rotatedCounterClockwise() {
+            var rotatedRows = new ArrayList<List<Boolean>>();
+
+            var resultRows = this.getNumCols();
+            var resultCols = this.getNumRows();
+
+            for (int i = 0; i < resultRows; i++) {
+                var newRow = new ArrayList<Boolean>(resultCols);
+                for (int j = 0; j < resultCols; j++) {
+                    newRow.add(this.get(j, this.getNumCols() - i - 1));
+                }
+
+                rotatedRows.add(newRow);
+            }
+
+            return new Paper(rotatedRows);
+        }
+
+        Paper foldedHorizontal(String instruction) {
+            var crease = Integer.parseInt(instruction.split("=")[1]);
+
+            List<List<Boolean>> topRows = new ArrayList<>();
+            for (int i = 0; i < crease; i++) {
+                topRows.add(rows.get(i));
+            }
+
+            List<List<Boolean>> bottomRows = new LinkedList<>();
+            for (int i = this.getNumRows() - 1; i > crease; i--) {
+                bottomRows.add(rows.get(i));
+            }
+
+            var sizeDifference = topRows.size() - bottomRows.size();
+
+            if (sizeDifference > 0) {
+                // pad top of bottom rows
+                for (int i = 0; i < sizeDifference; i++) {
+                    List<Boolean> newRow = new ArrayList<>();
+                    while (newRow.size() < bottomRows.get(0).size()) newRow.add(false);
+                    bottomRows.add(0, newRow);
+                }
+            } else if (sizeDifference < 0) {
+                // pad bottom of top rows
+                var sizeDifferenceAbs = Math.abs(sizeDifference);
+                for (int i = 0; i < sizeDifferenceAbs; i++) {
+                    List<Boolean> newRow = new ArrayList<>();
+                    while (newRow.size() < topRows.get(0).size()) newRow.add(false);
+                    topRows.add(newRow);
+                }
+            }
+
+            assert(topRows.size() == bottomRows.size());
+
+            var topIter = topRows.iterator();
+            var bottomIter = bottomRows.iterator();
+
+            var resultRows = new ArrayList<List<Boolean>>();
+
+            while (topIter.hasNext())
+            {
+                var topRow = topIter.next();
+                var bottomRow = bottomIter.next();
+
+                var resultRow = new ArrayList<Boolean>();
+                for (int i = 0; i < topRow.size(); i++) {
+                    var top = topRow.get(i);
+                    var bottom = bottomRow.get(i);
+                    resultRow.add(top || bottom);
+                }
+
+                resultRows.add(resultRow);
+            }
+
+            return new Paper(resultRows);
+        }
+
+        Paper foldedVertical(String instruction) {
+            return this.rotatedClockwise()
+                    .foldedHorizontal(instruction)
+                    .rotatedCounterClockwise();
         }
 
         @Override
@@ -29,61 +136,36 @@ public class Day13 {
     Paper current;
     List<String> instructions;
 
-    static Paper foldedHorizontal(Paper paper, String instruction) {
-        var crease = Integer.parseInt(instruction.split("=")[1]);
+    void solvePart1() {
+        var type = instructions.get(0).split("=")[0];
 
-        List<List<Boolean>> topRows = new ArrayList<>();
-        for (int i = 0; i < crease; i++) {
-            topRows.add(paper.rows.get(i));
+        if (type.equals("fold along y")) {
+            current = current.foldedHorizontal(instructions.get(0));
+        } else {
+            current = current.foldedVertical(instructions.get(0));
         }
 
-        List<List<Boolean>> bottomRows = new LinkedList<>();
-        for (int i = paper.rows.size() - 1; i > crease; i--) {
-            bottomRows.add(paper.rows.get(i));
-        }
+        var answer = current.rows.stream()
+                .flatMapToInt(l -> l.stream().mapToInt(b -> b ? 1 : 0))
+                .filter(i -> i == 1)
+                .count();
 
-        var sizeDifference = topRows.size() - bottomRows.size();
+        System.out.println("Part 1 answer: " + answer);
+    }
 
-        if (sizeDifference > 0) {
-            // pad top of bottom rows
-            for (int i = 0; i < sizeDifference; i++) {
-                List<Boolean> newRow = new ArrayList<>();
-                while (newRow.size() < bottomRows.get(0).size()) newRow.add(false);
-                bottomRows.add(0, newRow);
-            }
-        } else if (sizeDifference < 0) {
-            // pad bottom of top rows
-            var sizeDifferenceAbs = Math.abs(sizeDifference);
-            for (int i = 0; i < sizeDifferenceAbs; i++) {
-                List<Boolean> newRow = new ArrayList<>();
-                while (newRow.size() < topRows.get(0).size()) newRow.add(false);
-                topRows.add(newRow);
+    void solvePart2() {
+        for (var i : this.instructions) {
+            var type = i.split("=")[0];
+
+            if (type.equals("fold along y")) {
+                current = current.foldedHorizontal(i);
+            } else {
+                current = current.foldedVertical(i);
             }
         }
 
-        assert(topRows.size() == bottomRows.size());
-
-        var topIter = topRows.iterator();
-        var bottomIter = bottomRows.iterator();
-
-        var resultRows = new ArrayList<List<Boolean>>();
-
-        while (topIter.hasNext())
-        {
-            var topRow = topIter.next();
-            var bottomRow = bottomIter.next();
-
-            var resultRow = new ArrayList<Boolean>();
-            for (int i = 0; i < topRow.size(); i++) {
-                var top = topRow.get(i);
-                var bottom = bottomRow.get(i);
-                resultRow.add(top || bottom);
-            }
-
-            resultRows.add(resultRow);
-        }
-
-        return new Paper(resultRows);
+        System.out.println("Part 2 answer:");
+        System.out.println(current);
     }
 
     static Day13 fromInput(String filename) throws IOException {
@@ -128,8 +210,10 @@ public class Day13 {
     }
 
     public static void main(String[] args) throws IOException {
-        var test = Day13.fromInput("input/day13sample.txt");
-        var temp = foldedHorizontal(test.current, test.instructions.get(0));
-        System.out.println(temp);
+        var part1 = Day13.fromInput("input/day13.txt");
+        part1.solvePart1();
+
+        var part2 = Day13.fromInput("input/day13.txt");
+        part2.solvePart2();
     }
 }
