@@ -3,9 +3,7 @@ package me.austin0209.aoc;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
 
 public class Day13 {
     record Paper(List<List<Boolean>> rows) {
@@ -30,6 +28,63 @@ public class Day13 {
 
     Paper current;
     List<String> instructions;
+
+    static Paper foldedHorizontal(Paper paper, String instruction) {
+        var crease = Integer.parseInt(instruction.split("=")[1]);
+
+        List<List<Boolean>> topRows = new ArrayList<>();
+        for (int i = 0; i < crease; i++) {
+            topRows.add(paper.rows.get(i));
+        }
+
+        List<List<Boolean>> bottomRows = new LinkedList<>();
+        for (int i = paper.rows.size() - 1; i > crease; i--) {
+            bottomRows.add(paper.rows.get(i));
+        }
+
+        var sizeDifference = topRows.size() - bottomRows.size();
+
+        if (sizeDifference > 0) {
+            // pad top of bottom rows
+            for (int i = 0; i < sizeDifference; i++) {
+                List<Boolean> newRow = new ArrayList<>();
+                while (newRow.size() < bottomRows.get(0).size()) newRow.add(false);
+                bottomRows.add(0, newRow);
+            }
+        } else if (sizeDifference < 0) {
+            // pad bottom of top rows
+            var sizeDifferenceAbs = Math.abs(sizeDifference);
+            for (int i = 0; i < sizeDifferenceAbs; i++) {
+                List<Boolean> newRow = new ArrayList<>();
+                while (newRow.size() < topRows.get(0).size()) newRow.add(false);
+                topRows.add(newRow);
+            }
+        }
+
+        assert(topRows.size() == bottomRows.size());
+
+        var topIter = topRows.iterator();
+        var bottomIter = bottomRows.iterator();
+
+        var resultRows = new ArrayList<List<Boolean>>();
+
+        while (topIter.hasNext())
+        {
+            var topRow = topIter.next();
+            var bottomRow = bottomIter.next();
+
+            var resultRow = new ArrayList<Boolean>();
+            for (int i = 0; i < topRow.size(); i++) {
+                var top = topRow.get(i);
+                var bottom = bottomRow.get(i);
+                resultRow.add(top || bottom);
+            }
+
+            resultRows.add(resultRow);
+        }
+
+        return new Paper(resultRows);
+    }
 
     static Day13 fromInput(String filename) throws IOException {
         var result = new Day13();
@@ -69,11 +124,12 @@ public class Day13 {
         result.instructions = Arrays.stream(instructionsInput.split("\\n")).toList();
 
         result.current = new Paper(points);
-        System.out.println(result.current);
         return result;
     }
 
     public static void main(String[] args) throws IOException {
         var test = Day13.fromInput("input/day13sample.txt");
+        var temp = foldedHorizontal(test.current, test.instructions.get(0));
+        System.out.println(temp);
     }
 }
