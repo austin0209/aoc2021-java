@@ -4,50 +4,35 @@ import java.io.BufferedReader;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.util.*;
+import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
+import java.util.function.Consumer;
 
 public class Day15 {
-    record SearchNode(int x, int y, float totalCost, float hValue, SearchNode predecessor) {
-        static SearchNode of(
-                int x,
-                int y,
-                float cost,
-                BiFunction<Integer, Integer, Float> hFunction,
-                SearchNode predecessor) {
-            float totalCost;
+    record Vector2(int x, int y) {}
 
-            if (predecessor == null) {
-                totalCost = cost;
-            } else {
-                totalCost = predecessor.totalCost + cost;
+    static class SearchNode {
+        float hValue;
+        float gValue;
+        Point predecessor;
+
+        SearchNode() {
+            this.hValue = Float.MAX_VALUE;
+            this.gValue = Float.MAX_VALUE;
+            this.predecessor = null;
+        }
+
+        float getFValue() {
+            if (Float.compare(this.hValue, Float.MAX_VALUE) == 0 || Float.compare(this.gValue, Float.MAX_VALUE) == 0) {
+                return Float.MAX_VALUE;
             }
 
-            return new SearchNode(x, y, totalCost, hFunction.apply(x, y), predecessor);
-        }
-
-        public float fValue() {
-            return this.hValue + this.totalCost;
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (!(o instanceof SearchNode other)) return false;
-
-            return this.x == other.x && this.y == other.y;
-        }
-
-        @Override
-        public int hashCode() {
-            return ("" + this.x + this.y).hashCode();
-        }
-
-        @Override
-        public String toString() {
-            return "" + this.x + " " + this.y;
+            return hValue + gValue;
         }
     }
 
     List<List<Integer>> riskLevels;
+    Map<Point, SearchNode> nodes;
 
     OptionalInt get(int x, int y) {
         try {
@@ -56,6 +41,8 @@ public class Day15 {
             return OptionalInt.empty();
         }
     }
+
+    OptionalInt get(Point p) { return get(p.x(), p.y()); }
 
     float h(int x, int y) {
         int xDest = riskLevels.get(0).size() - 1;
@@ -71,53 +58,63 @@ public class Day15 {
         return x >= 0 && x < riskLevels.get(0).size() && y >= 0 && y < riskLevels.size();
     }
 
-    void solvePart1() {
-        Queue<SearchNode> fringe =
-                new PriorityQueue<>(100, (s1, s2) -> Float.compare(s1.fValue(), s2.fValue()));
-        Set<SearchNode> searched = new HashSet<>();
+    int fringeComparator(Point a, Point b) {
+        var fA = this.nodes.get(a).getFValue();
+        var fB = this.nodes.get(b).getFValue();
+        return Float.compare(fA, fB);
+    }
 
-        var current =
-                SearchNode.of(0, 0, this.get(0, 0).orElseThrow(), this::h, null);
+    void addToFringe(Point current, Point p, Queue<Point> fringe) {
+        if (!inBounds(p.x(), p.y())) return;
+
+        var cost = this.get(p).orElseThrow();
+        var node = this.nodes.get(p);
+        var currentNode = this.nodes.get(current);
+        assert(node != null && currentNode != null);
+
+        var tentativeG = currentNode.gValue + cost;
+        if (tentativeG < node.gValue) {
+            node.predecessor = current;
+            node.gValue = tentativeG;
+            node.hValue = h(p.x(), p.y());
+            if (!fringe.contains(p)) {
+                fringe.add(p);
+            }
+        }
+    }
+
+    void solvePart1() {
+        Queue<Point> fringe = new PriorityQueue<>(100, this::fringeComparator);
+        var start = new Point(0, 0);
+        this.nodes.get(start).gValue = 0;
+        this.nodes.get(start).hValue = this.h(0, 0);
+        fringe.add(start);
 
         int xDest = riskLevels.get(0).size() - 1;
         int yDest = riskLevels.size() - 1;
+        var destination = new Point(xDest, yDest);
 
-        while (current.x != xDest || current.y != yDest) {
-            searched.add(current);
+        Point current = null;
 
-            if (inBounds(current.x + 1, current.y)) {
-                var cost = this.get(current.x + 1, current.y).orElseThrow();
-                var node = SearchNode.of(current.x + 1, current.y, cost, this::h, current);
-                if (!searched.contains(node)) fringe.add(node);
-            }
-
-            if (inBounds(current.x, current.y + 1)) {
-                var cost = this.get(current.x, current.y + 1).orElseThrow();
-                var node = SearchNode.of(current.x, current.y + 1, cost, this::h, current);
-                if (!searched.contains(node)) fringe.add(node);
-            }
-
-            if (inBounds(current.x - 1, current.y)) {
-                var cost = this.get(current.x - 1, current.y).orElseThrow();
-                var node = SearchNode.of(current.x - 1, current.y, cost, this::h, current);
-                if (!searched.contains(node)) fringe.add(node);
-            }
-
-            if (inBounds(current.x, current.y - 1)) {
-                var cost = this.get(current.x, current.y - 1).orElseThrow();
-                var node = SearchNode.of(current.x, current.y - 1, cost, this::h, current);
-                if (!searched.contains(node)) fringe.add(node);
-            }
-
+        while (!fringe.isEmpty()) {
             current = fringe.remove();
+            if (current.equals(destination)) {
+                break;
+            }
+
+            addToFringe(current, new Point(current.x() + 1, current.y()), fringe);
+            addToFringe(current, new Point(current.x(), current.y() + 1), fringe);
+            addToFringe(current, new Point(current.x() - 1, current.y()), fringe);
+            addToFringe(current, new Point(current.x(), current.y() - 1), fringe);
         }
 
         int answer = 0;
-
-
-        while (current.predecessor != null) {
-            answer += this.get(current.x, current.y).orElseThrow();
-            current = current.predecessor;
+        assert(current != null);
+        var currentNode = this.nodes.get(current);
+        while (currentNode.predecessor != null) {
+            answer += this.get(current.x(), current.y()).orElseThrow();
+            current = currentNode.predecessor;
+            currentNode = this.nodes.get(current);
         }
 
         System.out.println("Part 1 answer: " + answer);
@@ -125,7 +122,10 @@ public class Day15 {
 
     static Day15 fromInput(String filename) throws FileNotFoundException {
         var result = new Day15();
+
+        result.nodes = new HashMap<>();
         result.riskLevels = new ArrayList<>();
+
         var reader = new BufferedReader(new FileReader(filename));
         var lines = reader.lines().toList();
 
@@ -136,6 +136,12 @@ public class Day15 {
                     .toList();
 
             result.riskLevels.add(row);
+        }
+
+        for (int y = 0; y < result.riskLevels.size(); y++) {
+            for (int x = 0; x < result.riskLevels.get(0).size(); x++) {
+                result.nodes.put(new Point(x, y), new SearchNode());
+            }
         }
 
         return result;
