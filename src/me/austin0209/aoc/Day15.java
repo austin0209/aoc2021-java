@@ -4,9 +4,6 @@ import java.io.BufferedReader;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.util.*;
-import java.util.function.BiConsumer;
-import java.util.function.BiFunction;
-import java.util.function.Consumer;
 
 public class Day15 {
     record Vector2(int x, int y) {}
@@ -83,7 +80,7 @@ public class Day15 {
         }
     }
 
-    void solvePart1() {
+    int solve() {
         Queue<Point> fringe = new PriorityQueue<>(100, this::fringeComparator);
         var start = new Point(0, 0);
         this.nodes.get(start).gValue = 0;
@@ -117,7 +114,42 @@ public class Day15 {
             currentNode = this.nodes.get(current);
         }
 
-        System.out.println("Part 1 answer: " + answer);
+        return answer;
+    }
+
+    void solvePart1() {
+        System.out.println("Part 1 answer: " + this.solve());
+    }
+
+    void solvePart2() {
+        // Get full risk levels
+        var rows = this.riskLevels.size();
+        var cols = this.riskLevels.get(0).size();
+
+        List<List<Integer>> newRisks = new ArrayList<>();
+
+        for (int y = 0; y < rows * 5; y++) {
+            List<Integer> row = new ArrayList<>();
+            var rowOffset = y / rows;
+
+            for (int x = 0; x < cols * 5; x++) {
+                var colOffset = x / cols;
+
+                var sourceX = x - colOffset * cols;
+                var sourceY = y - rowOffset * rows;
+
+                var value = this.get(sourceX, sourceY).orElseThrow() + rowOffset + colOffset;
+                value = value > 9 ? value % 9 : value;
+                row.add(value);
+                this.nodes.put(new Point(x, y), new SearchNode());
+            }
+
+            newRisks.add(row);
+        }
+
+        this.riskLevels = newRisks;
+
+        System.out.println("Part 2 answer: " + this.solve());
     }
 
     static Day15 fromInput(String filename) throws FileNotFoundException {
@@ -150,5 +182,8 @@ public class Day15 {
     public static void main(String[] args) throws FileNotFoundException {
         var part1 = Day15.fromInput("input/day15.txt");
         part1.solvePart1();
+
+        var part2 = Day15.fromInput("input/day15.txt");
+        part2.solvePart2();
     }
 }
